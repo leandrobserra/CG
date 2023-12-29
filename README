@@ -1,0 +1,40 @@
+Assignment 3
+Student Name: Yonghui Rao
+Student ID: 16093645
+
+
+Usage:
+
+#1 Press space to pause the animation;
+#2 Hover the planet with mouse will highlight it (It is implemented by matching the pixel color with planet color)
+
+Build:
+You can compile the source files via makefile or command "g++ -o test main.cpp textFile.cpp -lGL -lGLEW -lglfw"
+
+
+Files:
+main.cpp: the primary cpp file, draws spheres. Reads, compiles and links shaders
+textFile.h/textFile.cpp: Read shaders.
+test.vert: Vertex shader source code.
+test.frag: Fragment shader source code.
+makefile: for make
+screenShots: *.png
+
+
+Implementation:
+1. Each of the objects is drawn as a tessellated sphere using the tessellation shaders, with its
+own radius and colour.
+2. The planets circle the star, each on its own path and with its own velocity.
+3. The space bar can be used to pause and resume the animation.
+4. The scene is lit by a single point light source located at the centre of the star. The star itself
+is lit by a bright ambient light. The Phong lighting model with Phong (per-fragment, smooth) shading
+is to be used.
+5. When the mouse pointer hovers over a planet, it is drawn in a bright highlight colour.
+6. The scene is rendered with perspective projection
+
+
+The source code could be compiled on both linux and windows.
+
+
+
+

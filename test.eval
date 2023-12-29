@@ -1,0 +1,52 @@
+#version 400
+
+layout (triangles, equal_spacing, ccw) in;
+
+uniform vec3 lightPos = vec3(0.0f);   // by  default the single point light source located at the centre of the star
+uniform vec3 planetLocaion;
+uniform float radius = 1.0f;
+uniform mat4 mvp;
+uniform mat4 mv;
+
+
+out VS_OUT {
+    vec3 norm_eye;
+    vec3 light_eye;
+    vec3 view_eye;
+};
+
+
+void main() {
+
+
+    // vertex position
+    vec3 pos0 = gl_TessCoord.x * gl_in[0].gl_Position.xyz;
+    vec3 pos1 = gl_TessCoord.y * gl_in[1].gl_Position.xyz;
+    vec3 pos2 = gl_TessCoord.z * gl_in[2].gl_Position.xyz;
+    // normalise the position to push it to the surface of the sphere
+
+
+    vec3 pos = normalize(pos0 + pos1 + pos2) * radius;
+    vec3 tePosition = pos + planetLocaion;
+
+
+    // we can now perform the transformations and shading calculations
+    // formerly done in the vertex shader
+
+    norm_eye = (mv * vec4(tePosition, 1)).xyz - (mv * vec4(planetLocaion, 1)).xyz;
+
+    vec3 pos_eye = (mv * vec4(tePosition, 1)).xyz;
+    vec3 lightPos_eye = (mv * vec4(lightPos, 1.0f)).xyz;
+    light_eye = lightPos_eye - pos_eye.xyz;
+
+    view_eye = vec3(pos_eye);
+
+    // normalise the direction vectors
+    light_eye = normalize(light_eye);
+    view_eye  = normalize(view_eye);
+
+    gl_Position = mvp * vec4(tePosition, 1);
+
+
+
+}
