@@ -151,6 +151,15 @@ int main() {
     GLuint saturnTextureID = loadTexture("texturas/saturn.jpg");
     GLuint saturnRingTextureID = loadTexture("texturas/saturn_ring.png");
 
+    double angle[9] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    float pos_earth = 50.0;
+    double speed_factor = 10;
+
+    auto orbitRadius = [pos_earth](double theta, double e, double rad) -> double { return pos_earth*rad*((1.0 - e * e) / (1.0 + e * std::cos(theta)));};
+    auto delta_angle = [](double year_in_days, double seconds_on_day) -> double {return (2.0 * 3.14159 / (year_in_days * seconds_on_day)); };
+    auto angular_speed = [speed_factor](double orbit_in_days) -> double {return ((2 * 3.14159) / orbit_in_days)* speed_factor; };
+  
+
 
     do {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -165,16 +174,48 @@ int main() {
             rodar = false;
         }
 
+        angle[2] += angular_speed(365.25);
+
+        double radius = orbitRadius(3.14159 * 2 * angle[2] / 360, 0.017, 1);
+       
+        float x = radius * sin(3.14159 * 2 * angle[2] / 360);
+        float y = radius * cos(3.14159 * 2 * angle[2] / 360);
+
         // Render Earth
-        glm::mat4 earthModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-24.0f, 0.0f, 0.0f));
+        glm::mat4 earthModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, 0.0f, y));
         earthModelMatrix = glm::rotate(earthModelMatrix, velocidade, glm::vec3(0.0f, 1.0f, 0.0f));
+
         MVP = getProjectionMatrix() * getViewMatrix() * earthModelMatrix;
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
         setTexture(earthTextureID, programID);
         renderSphere(1.0f, 36, 18);
 
+        // Render Moon
+        angle[8] += angular_speed(27.32);
+
+        radius = orbitRadius(3.14159 * 2 * angle[8] / 360, 0.055, 0.1);
+
+        float x_m = radius * sin(3.14159 * 2 * angle[8] / 360);
+        float y_m = radius * cos(3.14159 * 2 * angle[8] / 360);
+
+        glm::mat4 moonModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x+x_m, 0.0f, y+y_m));
+        moonModelMatrix = glm::rotate(moonModelMatrix, velocidade, glm::vec3(0.0f, 1.0f, 0.0f));
+        MVP = getProjectionMatrix() * getViewMatrix() * (moonModelMatrix);
+        glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+        setTexture(moonTextureID, programID);
+        renderSphere(0.55f, 36, 18);
+
+
         // Render Mars
-        glm::mat4 marsModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-12.0f, 0.0f, 0.0f));
+
+        angle[3] += angular_speed(687);
+
+        radius = orbitRadius(3.14159 * 2 * angle[3] / 360, 0.093, 1.524);
+
+        x = radius * sin(3.14159 * 2 * angle[3] / 360);
+        y = radius * cos(3.14159 * 2 * angle[3] / 360);
+
+        glm::mat4 marsModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, 0.0f, y));
         marsModelMatrix = glm::rotate(marsModelMatrix, velocidade, glm::vec3(0.0f, 1.0f, 0.0f));
         MVP = getProjectionMatrix() * getViewMatrix() * marsModelMatrix;
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
@@ -189,16 +230,17 @@ int main() {
         setTexture(sunTextureID, programID);
         renderSphere(10.0f, 36, 18);
 
-        // Render Moon
-        glm::mat4 moonModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(12.0f, 0.0f, 0.0f));
-        moonModelMatrix = glm::rotate(moonModelMatrix, velocidade, glm::vec3(0.0f, 1.0f, 0.0f));
-        MVP = getProjectionMatrix() * getViewMatrix() * moonModelMatrix;
-        glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
-        setTexture(moonTextureID, programID);
-        renderSphere(0.55f, 36, 18);
-
+    
         // Render Venus
-        glm::mat4 venusModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(24.0f, 0.0f, 0.0f));
+
+        angle[1] += angular_speed(224.70);
+
+        radius = orbitRadius(3.14159 * 2 * angle[1] / 360, 0.007, 0.723);
+
+        x = radius * sin(3.14159 * 2 * angle[1] / 360);
+        y = radius * cos(3.14159 * 2 * angle[1] / 360);
+
+        glm::mat4 venusModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, 0.0f, y));
         venusModelMatrix = glm::rotate(venusModelMatrix, velocidade, glm::vec3(0.0f, 1.0f, 0.0f));
         MVP = getProjectionMatrix() * getViewMatrix() * venusModelMatrix;
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
@@ -206,7 +248,15 @@ int main() {
         renderSphere(0.95f, 36, 18);
 
         // Render Jupiter
-        glm::mat4 jupiterModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-36.0f, 0.0f, 0.0f));
+
+        angle[4] += angular_speed(4328.9);
+
+        radius = orbitRadius(3.14159 * 2 * angle[4] / 360, 0.007, 5.204);
+
+        x = radius * sin(3.14159 * 2 * angle[4] / 360);
+        y = radius * cos(3.14159 * 2 * angle[4] / 360);
+
+        glm::mat4 jupiterModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, 0.0f, y));
         jupiterModelMatrix = glm::rotate(jupiterModelMatrix, velocidade, glm::vec3(0.0f, 1.0f, 0.0f));
         MVP = getProjectionMatrix() * getViewMatrix() * jupiterModelMatrix;
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
@@ -214,7 +264,14 @@ int main() {
         renderSphere(4.2f, 36, 18);
 
         // Render Uranus
-        glm::mat4 uranusModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-48.0f, 0.0f, 0.0f));
+        angle[6] += angular_speed(84.01*365);
+
+        radius = orbitRadius(3.14159 * 2 * angle[6] / 360, 0.046, 19.22);
+
+        x = radius * sin(3.14159 * 2 * angle[6] / 360);
+        y = radius * cos(3.14159 * 2 * angle[6] / 360);
+
+        glm::mat4 uranusModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, 0.0f, y));
         uranusModelMatrix = glm::rotate(uranusModelMatrix, velocidade, glm::vec3(0.0f, 1.0f, 0.0f));
         MVP = getProjectionMatrix() * getViewMatrix() * uranusModelMatrix;
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
@@ -222,15 +279,31 @@ int main() {
         renderSphere(2.9f, 36, 18);
 
         // Render Mercury
-        glm::mat4 mercuryModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(18.0f, 0.0f, 0.0f));
+
+        angle[0] += angular_speed(87.97);
+
+        radius = orbitRadius(3.14159 * 2 * angle[0] / 360, 0.206, 0.387);
+
+        x = radius * sin(3.14159 * 2 * angle[0] / 360);
+        y = radius * cos(3.14159 * 2 * angle[0] / 360);
+
+        glm::mat4 mercuryModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, 0.0f, y));
         mercuryModelMatrix = glm::rotate(mercuryModelMatrix, velocidade, glm::vec3(0.0f, 1.0f, 0.0f));
         MVP = getProjectionMatrix() * getViewMatrix() * mercuryModelMatrix;
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
         setTexture(mercuryTextureID, programID);
-        renderSphere(2.8f, 36, 18);
+        renderSphere(0.383f, 36, 18);
 
         // Render Neptune
-        glm::mat4 neptuneModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(24.0f, 0.0f, 0.0f));
+
+        angle[7] += angular_speed(164.8*365);
+
+        radius = orbitRadius(3.14159 * 2 * angle[7] / 360, 0.01, 30.05);
+
+        x = radius * sin(3.14159 * 2 * angle[7] / 360);
+        y = radius * cos(3.14159 * 2 * angle[7] / 360);
+
+        glm::mat4 neptuneModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, 0.0f, y));
         neptuneModelMatrix = glm::rotate(neptuneModelMatrix, velocidade, glm::vec3(0.0f, 1.0f, 0.0f));
         MVP = getProjectionMatrix() * getViewMatrix() * neptuneModelMatrix;
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
@@ -238,7 +311,13 @@ int main() {
         renderSphere(0.78f, 36, 18);
 
         // Render Saturn
-        glm::mat4 saturnModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(30.0f, 0.0f, 0.0f));
+        angle[5] += angular_speed(29.46 * 365);
+
+        radius = orbitRadius(3.14159 * 2 * angle[5] / 360, 0.056, 9.582);
+
+        x = radius * sin(3.14159 * 2 * angle[5] / 360);
+        y = radius * cos(3.14159 * 2 * angle[5] / 360);
+        glm::mat4 saturnModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, 0.0f, y));
         saturnModelMatrix = glm::rotate(saturnModelMatrix, velocidade, glm::vec3(0.0f, 1.0f, 0.0f));
         MVP = getProjectionMatrix() * getViewMatrix() * saturnModelMatrix;
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
@@ -247,7 +326,6 @@ int main() {
 
 
         // Render Saturn Ring
-        
 
 
         glfwSwapBuffers(window);
