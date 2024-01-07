@@ -151,8 +151,8 @@ int main() {
     GLuint saturnTextureID = loadTexture("texturas/saturn.jpg");
     GLuint saturnRingTextureID = loadTexture("texturas/saturn_ring.png");
 
-    double angle[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-    float pos_earth = 30.0;
+    double angle[9] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    float pos_earth = 50.0;
     double speed_factor = 10;
 
     auto orbitRadius = [pos_earth](double theta, double e, double rad) -> double { return pos_earth*rad*((1.0 - e * e) / (1.0 + e * std::cos(theta)));};
@@ -190,6 +190,22 @@ int main() {
         setTexture(earthTextureID, programID);
         renderSphere(1.0f, 36, 18);
 
+        // Render Moon
+        angle[8] += angular_speed(27.32);
+
+        radius = orbitRadius(3.14159 * 2 * angle[8] / 360, 0.055, 0.1);
+
+        float x_m = radius * sin(3.14159 * 2 * angle[8] / 360);
+        float y_m = radius * cos(3.14159 * 2 * angle[8] / 360);
+
+        glm::mat4 moonModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x+x_m, 0.0f, y+y_m));
+        moonModelMatrix = glm::rotate(moonModelMatrix, velocidade, glm::vec3(0.0f, 1.0f, 0.0f));
+        MVP = getProjectionMatrix() * getViewMatrix() * (moonModelMatrix);
+        glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+        setTexture(moonTextureID, programID);
+        renderSphere(0.55f, 36, 18);
+
+
         // Render Mars
 
         angle[3] += angular_speed(687);
@@ -214,14 +230,7 @@ int main() {
         setTexture(sunTextureID, programID);
         renderSphere(10.0f, 36, 18);
 
-        // Render Moon
-        glm::mat4 moonModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(12.0f, 0.0f, 0.0f));
-        moonModelMatrix = glm::rotate(moonModelMatrix, velocidade, glm::vec3(0.0f, 1.0f, 0.0f));
-        MVP = getProjectionMatrix() * getViewMatrix() * moonModelMatrix;
-        glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
-        setTexture(moonTextureID, programID);
-        renderSphere(0.55f, 36, 18);
-
+    
         // Render Venus
 
         angle[1] += angular_speed(224.70);
