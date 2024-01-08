@@ -168,88 +168,88 @@ int main() {
         double radius = orbitRadius(3.14159 * 2 * angle[2] / 360, 0.017, 1);
         if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS or rodar == true) {
 
-            //Translação Terra
+            //TranslaÃ§Ã£o Terra
             angle[2] += angular_speed(365.25);
             x[2] = radius * sin(3.14159 * 2 * angle[2] / 360);
             y[2] = radius * cos(3.14159 * 2 * angle[2] / 360);
-            //Rotação
+            //RotaÃ§Ã£o
             velocidade[2] += 1574 * escala;
 
 
-            //Translação Marte
+            //TranslaÃ§Ã£o Marte
             angle[3] += angular_speed(687);
             radius = orbitRadius(3.14159 * 2 * angle[3] / 360, 0.093, 1.524);
             x[3] = radius * sin(3.14159 * 2 * angle[3] / 360);
             y[3] = radius * cos(3.14159 * 2 * angle[3] / 360);
-            //Rotação
+            //RotaÃ§Ã£o
             velocidade[3] += 866 * escala;
 
-            //Translação Venus
+            //TranslaÃ§Ã£o Venus
             angle[1] += angular_speed(224.70);
             radius = orbitRadius(3.14159 * 2 * angle[1] / 360, 0.007, 0.723);
             x[1] = radius * sin(3.14159 * 2 * angle[1] / 360);
             y[1] = radius * cos(3.14159 * 2 * angle[1] / 360);
-            //Rotação
+            //RotaÃ§Ã£o
             velocidade[1] += 1.52 * escala;
 
 
-            //Translação Jupiter
+            //TranslaÃ§Ã£o Jupiter
             angle[4] += angular_speed(4328.9);
             radius = orbitRadius(3.14159 * 2 * angle[4] / 360, 0.007, 5.204);
             x[4] = radius * sin(3.14159 * 2 * angle[4] / 360);
             y[4] = radius * cos(3.14159 * 2 * angle[4] / 360);
-            //Rotação
+            //RotaÃ§Ã£o
             velocidade[4] += 45583 * escala;
 
 
-            //Translação Urano
+            //TranslaÃ§Ã£o Urano
             angle[6] += angular_speed(84.01 * 365);
 
             radius = orbitRadius(3.14159 * 2 * angle[6] / 360, 0.046, 19.22);
 
             x[6] = radius * sin(3.14159 * 2 * angle[6] / 360);
             y[6] = radius * cos(3.14159 * 2 * angle[6] / 360);
-            //Rotação
+            //RotaÃ§Ã£o
             velocidade[6] += 14794 * escala;
 
 
-            //Translação Mercurio
+            //TranslaÃ§Ã£o Mercurio
             angle[0] += angular_speed(87.97);
 
             radius = orbitRadius(3.14159 * 2 * angle[0] / 360, 0.206, 0.387);
 
             x[0] = radius * sin(3.14159 * 2 * angle[0] / 360);
             y[0] = radius * cos(3.14159 * 2 * angle[0] / 360);
-            //Rotação
+            //RotaÃ§Ã£o
             velocidade[0] += 10.83 * escala;
 
 
-            //Translação Neptuno
+            //TranslaÃ§Ã£o Neptuno
             angle[7] += angular_speed(164.8 * 365);
 
             radius = orbitRadius(3.14159 * 2 * angle[7] / 360, 0.01, 30.05);
 
             x[7] = radius * sin(3.14159 * 2 * angle[7] / 360);
             y[7] = radius * cos(3.14159 * 2 * angle[7] / 360);
-            //Rotação
+            //RotaÃ§Ã£o
             velocidade[7] += 9719 * escala;
 
 
-            //Translação Saturno
+            //TranslaÃ§Ã£o Saturno
             angle[5] += angular_speed(29.46 * 365);
 
             radius = orbitRadius(3.14159 * 2 * angle[5] / 360, 0.056, 9.582);
 
             x[5] = radius * sin(3.14159 * 2 * angle[5] / 360);
             y[5] = radius * cos(3.14159 * 2 * angle[5] / 360);
-            //Rotação
+            //RotaÃ§Ã£o
             velocidade[5] += 36840 * escala;
 
 
-            //Rotação do Sol
+            //RotaÃ§Ã£o do Sol
             velocidade[8] += 1574 / 30 * escala;
 
-            //Translação Lua
+            //TranslaÃ§Ã£o Lua
             angle[8] += angular_speed(27.32);
             radius = orbitRadius(3.14159 * 2 * angle[8] / 360, 0.055, 0.1);
             x[8] = radius * sin(3.14159 * 2 * angle[8] / 360);
