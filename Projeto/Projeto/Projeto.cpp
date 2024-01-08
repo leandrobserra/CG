@@ -9,6 +9,7 @@
 #include "common/texture.hpp"
 #include <common/controls.hpp>
 #include "Sphere.h"
+#include "PlanetRing.h"
 
 GLFWwindow* window;
 unsigned int loadTexture(char const* path);
@@ -102,6 +103,8 @@ void renderSphere(float r, int sectors, int stacks) {
     sphere.Draw();
 }
 
+
+
 bool rodar = false;
 float velocidade = 0.0f;
 
@@ -112,6 +115,21 @@ void setTexture(GLuint textureID, GLuint programID) {
     glUniform1i(glGetUniformLocation(programID, "myTextureSampler"), 0);
 }
 
+void setShaderUniforms(GLuint programID, const glm::vec3& lightColor, const glm::vec3& lightPos, const glm::vec3& viewPos,
+    float ambientStrength, float specularStrength, float shininess,
+    const glm::mat4& projection, const glm::mat4& view, const glm::mat4& model) {
+    glUniform3f(glGetUniformLocation(programID, "lightColor"), lightColor.r, lightColor.g, lightColor.b);
+    glUniform3f(glGetUniformLocation(programID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
+    glUniform3f(glGetUniformLocation(programID, "viewPos"), viewPos.x, viewPos.y, viewPos.z);
+
+    glUniform1f(glGetUniformLocation(programID, "ambientStrength"), ambientStrength);
+    glUniform1f(glGetUniformLocation(programID, "specularStrength"), specularStrength);
+    glUniform1f(glGetUniformLocation(programID, "shininess"), shininess);
+
+    glUniformMatrix4fv(glGetUniformLocation(programID, "projection"), 1, GL_FALSE, &projection[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(programID, "view"), 1, GL_FALSE, &view[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(programID, "model"), 1, GL_FALSE, &model[0][0]);
+}
 
 
 
@@ -133,7 +151,7 @@ int main() {
 
     // Get the uniform location for the MVP matrix
     GLuint MatrixID = glGetUniformLocation(programID, "MVP");
-    glm::mat4 MVP;
+    glm::mat4 MVP, Projection, View;
 
     glUseProgram(programID);
     glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
@@ -158,6 +176,10 @@ int main() {
     auto orbitRadius = [pos_earth](double theta, double e, double rad) -> double { return pos_earth*rad*((1.0 - e * e) / (1.0 + e * std::cos(theta)));};
     auto delta_angle = [](double year_in_days, double seconds_on_day) -> double {return (2.0 * 3.14159 / (year_in_days * seconds_on_day)); };
     auto angular_speed = [speed_factor](double orbit_in_days) -> double {return ((2 * 3.14159) / orbit_in_days)* speed_factor; };
+
+    glm::vec3 lightpos(0.0f, 0.0f, 0.0f);
+    glm::vec3 lightcolor(1.0f, 1.0f, 1.0f);
+
   
 
 
@@ -185,7 +207,13 @@ int main() {
         glm::mat4 earthModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, 0.0f, y));
         earthModelMatrix = glm::rotate(earthModelMatrix, velocidade, glm::vec3(0.0f, 1.0f, 0.0f));
 
-        MVP = getProjectionMatrix() * getViewMatrix() * earthModelMatrix;
+        Projection = getProjectionMatrix();
+        View = getViewMatrix();
+        MVP = Projection * View * earthModelMatrix;
+        glm::vec3 viewPos = getCameraPosition();
+
+        setShaderUniforms(programID, lightcolor, lightpos, viewPos, 0.5f, 0.1f, 0.4f * 128.0f, Projection, View, earthModelMatrix);
+
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
         setTexture(earthTextureID, programID);
         renderSphere(1.0f, 36, 18);
@@ -200,7 +228,14 @@ int main() {
 
         glm::mat4 moonModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x+x_m, 0.0f, y+y_m));
         moonModelMatrix = glm::rotate(moonModelMatrix, velocidade, glm::vec3(0.0f, 1.0f, 0.0f));
-        MVP = getProjectionMatrix() * getViewMatrix() * (moonModelMatrix);
+        Projection = getProjectionMatrix();
+        View = getViewMatrix();
+        MVP = Projection * View * moonModelMatrix;
+        viewPos = getCameraPosition();
+
+        setShaderUniforms(programID, lightcolor, lightpos, viewPos, 0.5f, 0.1f, 0.4f * 128.0f, Projection, View, moonModelMatrix);
+
+
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
         setTexture(moonTextureID, programID);
         renderSphere(0.55f, 36, 18);
@@ -217,7 +252,13 @@ int main() {
 
         glm::mat4 marsModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, 0.0f, y));
         marsModelMatrix = glm::rotate(marsModelMatrix, velocidade, glm::vec3(0.0f, 1.0f, 0.0f));
-        MVP = getProjectionMatrix() * getViewMatrix() * marsModelMatrix;
+        Projection = getProjectionMatrix();
+        View = getViewMatrix();
+        MVP = Projection * View * marsModelMatrix;
+        viewPos = getCameraPosition();
+
+        setShaderUniforms(programID, lightcolor, lightpos, viewPos, 0.5f, 0.1f, 0.4f * 128.0f, Projection, View, marsModelMatrix);
+
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
         setTexture(marsTextureID, programID);
         renderSphere(1.2f, 36, 18);
@@ -225,7 +266,13 @@ int main() {
         // Render Sun
         glm::mat4 sunModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
         sunModelMatrix = glm::rotate(sunModelMatrix, velocidade, glm::vec3(0.0f, 1.0f, 0.0f));
-        MVP = getProjectionMatrix() * getViewMatrix() * sunModelMatrix;
+        Projection = getProjectionMatrix();
+        View = getViewMatrix();
+        MVP = Projection * View * sunModelMatrix;
+        viewPos = getCameraPosition();
+
+        setShaderUniforms(programID, lightcolor, lightpos, viewPos, 0.5f, 0.1f, 0.4f * 128.0f, Projection, View, sunModelMatrix);
+
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
         setTexture(sunTextureID, programID);
         renderSphere(10.0f, 36, 18);
@@ -242,7 +289,15 @@ int main() {
 
         glm::mat4 venusModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, 0.0f, y));
         venusModelMatrix = glm::rotate(venusModelMatrix, velocidade, glm::vec3(0.0f, 1.0f, 0.0f));
-        MVP = getProjectionMatrix() * getViewMatrix() * venusModelMatrix;
+
+        Projection = getProjectionMatrix();
+        View = getViewMatrix();
+        MVP = Projection * View * venusModelMatrix;
+        viewPos = getCameraPosition();
+
+        setShaderUniforms(programID, lightcolor, lightpos, viewPos, 0.5f, 0.1f, 0.4f * 128.0f, Projection, View, venusModelMatrix);
+
+
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
         setTexture(venusTextureID, programID);
         renderSphere(0.95f, 36, 18);
@@ -258,7 +313,13 @@ int main() {
 
         glm::mat4 jupiterModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, 0.0f, y));
         jupiterModelMatrix = glm::rotate(jupiterModelMatrix, velocidade, glm::vec3(0.0f, 1.0f, 0.0f));
-        MVP = getProjectionMatrix() * getViewMatrix() * jupiterModelMatrix;
+        Projection = getProjectionMatrix();
+        View = getViewMatrix();
+        MVP = Projection * View * jupiterModelMatrix;
+        viewPos = getCameraPosition();
+
+        setShaderUniforms(programID, lightcolor, lightpos, viewPos, 0.5f, 0.1f, 0.4f * 128.0f, Projection, View, jupiterModelMatrix);
+
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
         setTexture(jupiterTextureID, programID);
         renderSphere(4.2f, 36, 18);
@@ -273,7 +334,13 @@ int main() {
 
         glm::mat4 uranusModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, 0.0f, y));
         uranusModelMatrix = glm::rotate(uranusModelMatrix, velocidade, glm::vec3(0.0f, 1.0f, 0.0f));
-        MVP = getProjectionMatrix() * getViewMatrix() * uranusModelMatrix;
+        Projection = getProjectionMatrix();
+        View = getViewMatrix();
+        MVP = Projection * View * uranusModelMatrix;
+        viewPos = getCameraPosition();
+
+        setShaderUniforms(programID, lightcolor, lightpos, viewPos, 0.5f, 0.1f, 0.4f * 128.0f, Projection, View, uranusModelMatrix);
+
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
         setTexture(uranusTextureID, programID);
         renderSphere(2.9f, 36, 18);
@@ -289,7 +356,13 @@ int main() {
 
         glm::mat4 mercuryModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, 0.0f, y));
         mercuryModelMatrix = glm::rotate(mercuryModelMatrix, velocidade, glm::vec3(0.0f, 1.0f, 0.0f));
-        MVP = getProjectionMatrix() * getViewMatrix() * mercuryModelMatrix;
+        Projection = getProjectionMatrix();
+        View = getViewMatrix();
+        MVP = Projection * View * mercuryModelMatrix;
+        viewPos = getCameraPosition();
+
+        setShaderUniforms(programID, lightcolor, lightpos, viewPos, 0.5f, 0.1f, 0.4f * 128.0f, Projection, View, mercuryModelMatrix);
+
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
         setTexture(mercuryTextureID, programID);
         renderSphere(0.383f, 36, 18);
@@ -305,7 +378,13 @@ int main() {
 
         glm::mat4 neptuneModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, 0.0f, y));
         neptuneModelMatrix = glm::rotate(neptuneModelMatrix, velocidade, glm::vec3(0.0f, 1.0f, 0.0f));
-        MVP = getProjectionMatrix() * getViewMatrix() * neptuneModelMatrix;
+        Projection = getProjectionMatrix();
+        View = getViewMatrix();
+        MVP = Projection * View * neptuneModelMatrix;
+        viewPos = getCameraPosition();
+
+        setShaderUniforms(programID, lightcolor, lightpos, viewPos, 0.5f, 0.1f, 0.4f * 128.0f, Projection, View, neptuneModelMatrix);
+
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
         setTexture(neptuneTextureID, programID);
         renderSphere(0.78f, 36, 18);
@@ -319,13 +398,20 @@ int main() {
         y = radius * cos(3.14159 * 2 * angle[5] / 360);
         glm::mat4 saturnModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x, 0.0f, y));
         saturnModelMatrix = glm::rotate(saturnModelMatrix, velocidade, glm::vec3(0.0f, 1.0f, 0.0f));
-        MVP = getProjectionMatrix() * getViewMatrix() * saturnModelMatrix;
+        Projection = getProjectionMatrix();
+        View = getViewMatrix();
+        MVP = Projection * View * saturnModelMatrix;
+        viewPos = getCameraPosition();
+
+        setShaderUniforms(programID, lightcolor, lightpos, viewPos, 0.5f, 0.1f, 0.4f * 128.0f, Projection, View, saturnModelMatrix);
+
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
         setTexture(saturnTextureID, programID);
         renderSphere(3.7f, 36, 18);
 
 
         // Render Saturn Ring
+
 
 
         glfwSwapBuffers(window);
