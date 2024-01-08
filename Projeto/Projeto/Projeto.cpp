@@ -271,7 +271,8 @@ int main() {
         MVP = Projection * View * sunModelMatrix;
         viewPos = getCameraPosition();
 
-        setShaderUniforms(programID, lightcolor, lightpos, viewPos, 0.5f, 0.1f, 0.4f * 128.0f, Projection, View, sunModelMatrix);
+        setShaderUniforms(programID, lightcolor, lightpos, viewPos, 1.f, 0.1f, 0.4f * 128.0f, Projection, View, sunModelMatrix);
+
 
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
         setTexture(sunTextureID, programID);
