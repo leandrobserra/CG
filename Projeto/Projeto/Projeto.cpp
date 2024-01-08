@@ -146,17 +146,18 @@ int main() {
     GLuint saturnTextureID = loadTexture("texturas/saturn.jpg");
     GLuint saturnRingTextureID = loadTexture("texturas/saturn_ring.png");
 
-    double angle[8] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-    float pos_earth = 30.0;
+    double angle[9] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 , 0.0 };
+    float pos_earth = 50.0;
     double speed_factor = 10;
 
     auto orbitRadius = [pos_earth](double theta, double e, double rad) -> double { return pos_earth * rad * ((1.0 - e * e) / (1.0 + e * std::cos(theta)));};
     auto delta_angle = [](double year_in_days, double seconds_on_day) -> double {return (2.0 * 3.14159 / (year_in_days * seconds_on_day)); };
     auto angular_speed = [speed_factor](double orbit_in_days) -> double {return ((2 * 3.14159) / orbit_in_days) * speed_factor; };
     bool rodar = true;
-    float velocidade[8] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-    float x[8] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-    float y[8] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+    float velocidade[9] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 , 0.0 };
+    float x[9] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 , 0.0 };
+    float y[9] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 , 0.0 };
+    float escala = 0.00005;
 
 
 
@@ -172,7 +173,7 @@ int main() {
             x[2] = radius * sin(3.14159 * 2 * angle[2] / 360);
             y[2] = radius * cos(3.14159 * 2 * angle[2] / 360);
             //Rotação
-            velocidade[2] += 1574 * 0.00005;
+            velocidade[2] += 1574 * escala;
 
 
             //Translação Marte
@@ -181,7 +182,7 @@ int main() {
             x[3] = radius * sin(3.14159 * 2 * angle[3] / 360);
             y[3] = radius * cos(3.14159 * 2 * angle[3] / 360);
             //Rotação
-            velocidade[3] += 866 * 0.00005;
+            velocidade[3] += 866 * escala;
 
             //Translação Venus
             angle[1] += angular_speed(224.70);
@@ -189,7 +190,7 @@ int main() {
             x[1] = radius * sin(3.14159 * 2 * angle[1] / 360);
             y[1] = radius * cos(3.14159 * 2 * angle[1] / 360);
             //Rotação
-            velocidade[1] += 1.52 * 0.00005;
+            velocidade[1] += 1.52 * escala;
 
 
             //Translação Jupiter
@@ -198,7 +199,7 @@ int main() {
             x[4] = radius * sin(3.14159 * 2 * angle[4] / 360);
             y[4] = radius * cos(3.14159 * 2 * angle[4] / 360);
             //Rotação
-            velocidade[4] += 45583 * 0.00005;
+            velocidade[4] += 45583 * escala;
 
 
             //Translação Urano
@@ -209,7 +210,7 @@ int main() {
             x[6] = radius * sin(3.14159 * 2 * angle[6] / 360);
             y[6] = radius * cos(3.14159 * 2 * angle[6] / 360);
             //Rotação
-            velocidade[6] += 14794 * 0.00005;
+            velocidade[6] += 14794 * escala;
 
 
             //Translação Mercurio
@@ -220,7 +221,7 @@ int main() {
             x[0] = radius * sin(3.14159 * 2 * angle[0] / 360);
             y[0] = radius * cos(3.14159 * 2 * angle[0] / 360);
             //Rotação
-            velocidade[0] += 10.83 * 0.00005;
+            velocidade[0] += 10.83 * escala;
 
 
             //Translação Neptuno
@@ -231,7 +232,7 @@ int main() {
             x[7] = radius * sin(3.14159 * 2 * angle[7] / 360);
             y[7] = radius * cos(3.14159 * 2 * angle[7] / 360);
             //Rotação
-            velocidade[7] += 9719 * 0.00005;
+            velocidade[7] += 9719 * escala;
 
 
             //Translação Saturno
@@ -242,8 +243,17 @@ int main() {
             x[5] = radius * sin(3.14159 * 2 * angle[5] / 360);
             y[5] = radius * cos(3.14159 * 2 * angle[5] / 360);
             //Rotação
-            velocidade[5] += 36840 * 0.00005;
+            velocidade[5] += 36840 * escala;
 
+
+            //Rotação do Sol
+            velocidade[8] += 1574 / 30 * escala;
+
+            //Translação Lua
+            angle[8] += angular_speed(27.32);
+            radius = orbitRadius(3.14159 * 2 * angle[8] / 360, 0.055, 0.1);
+            x[8] = radius * sin(3.14159 * 2 * angle[8] / 360);
+            y[8] = radius * cos(3.14159 * 2 * angle[8] / 360);
 
             rodar = true;
         }
@@ -262,6 +272,14 @@ int main() {
         setTexture(earthTextureID, programID);
         renderSphere(1.0f, 36, 18);
 
+        // Render Moon
+        glm::mat4 moonModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x[2] + x[8], 0.0f, y[2] + y[8]));
+        moonModelMatrix = glm::rotate(moonModelMatrix, velocidade[2], glm::vec3(0.0f, 1.0f, 0.0f));
+        MVP = getProjectionMatrix() * getViewMatrix() * (moonModelMatrix);
+        glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+        setTexture(moonTextureID, programID);
+        renderSphere(0.55f, 36, 18);
+
         // Render Mars
         glm::mat4 marsModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x[3], 0.0f, y[3]));
         marsModelMatrix = glm::rotate(marsModelMatrix, velocidade[3], glm::vec3(0.0f, 1.0f, 0.0f));
@@ -272,19 +290,11 @@ int main() {
 
         // Render Sun
         glm::mat4 sunModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-        //sunModelMatrix = glm::rotate(sunModelMatrix, velocidade[2], glm::vec3(0.0f, 1.0f, 0.0f));
+        sunModelMatrix = glm::rotate(sunModelMatrix, velocidade[8], glm::vec3(0.0f, 1.0f, 0.0f));
         MVP = getProjectionMatrix() * getViewMatrix() * sunModelMatrix;
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
         setTexture(sunTextureID, programID);
         renderSphere(10.0f, 36, 18);
-
-        // Render Moon
-        glm::mat4 moonModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(12.0f, 0.0f, 0.0f));
-        //moonModelMatrix = glm::rotate(moonModelMatrix, velocidade[3], glm::vec3(0.0f, 1.0f, 0.0f));
-        MVP = getProjectionMatrix() * getViewMatrix() * moonModelMatrix;
-        glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
-        setTexture(moonTextureID, programID);
-        renderSphere(0.55f, 36, 18);
 
         // Render Venus
         glm::mat4 venusModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x[1], 0.0f, y[1]));
