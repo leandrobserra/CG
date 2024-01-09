@@ -34,8 +34,6 @@ glm::vec3 getCameraDirection() {
 }
 
 
-// Initial position : on +Z
-glm::vec3 position = glm::vec3( -5.5, 35.5, 85.5);
 // Initial horizontal angle : toward -Z
 float horizontalAngle = 3.14f;
 // Initial vertical angle : -0.3 (câmara ficar um pouco inclinado para baixo)
@@ -43,12 +41,13 @@ float verticalAngle = -0.3f;
 // Initial Field of View
 float initialFoV = 45.0f;
 
-float speed = 80.0f; // 3 units / second
+float speed = 140.0f; // 3 units / second
 float mouseSpeed = 0.005f;
 
+float zoom = 1.0f;
 
 
-void computeMatricesFromInputs(){
+void computeMatricesFromInputs(glm::vec3& position){
 
 	// glfwGetTime is called only once, the first time this function is called
 	static double lastTime = glfwGetTime();
@@ -104,10 +103,22 @@ void computeMatricesFromInputs(){
 		position -= right * deltaTime * speed;
 	}
 
-	float FoV = initialFoV;// - 5 * glfwGetMouseWheel(); // Now GLFW 3 requires setting up a callback for this. It's a bit too complicated for this beginner's tutorial, so it's disabled instead.
+	// Aumentar Zoom
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+		zoom += 0.1;
+	}
+	// Diminuir Zoom
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+		zoom -=0.1;
+	}
+
+	zoom = glm::max(zoom, 0.1f);
+	float FoV = initialFoV / zoom;
+
+	//float FoV = initialFoV;// - 5 * glfwGetMouseWheel(); // Now GLFW 3 requires setting up a callback for this. It's a bit too complicated for this beginner's tutorial, so it's disabled instead.
 
 	// Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
-	ProjectionMatrix = glm::perspective(glm::radians(FoV), 4.0f / 3.0f, 0.1f, 1500.0f);
+	ProjectionMatrix = glm::perspective(glm::radians(FoV), 4.0f / 3.0f, 0.1f, 4000.0f);
 	// Camera matrix
 	ViewMatrix       = glm::lookAt(
 								position,           // Camera is here
