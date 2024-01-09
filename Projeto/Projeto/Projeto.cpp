@@ -11,8 +11,11 @@
 #include "Sphere.h"
 #include "PlanetRing.h"
 
+
 GLFWwindow* window;
 unsigned int loadTexture(char const* path);
+
+
 
 bool initializeGLFW() {
     if (!glfwInit()) {
@@ -98,7 +101,12 @@ unsigned int loadTexture(char const* path)
     return textureID;
 }
 
+
+
+
+
 void renderSphere(float r, int sectors, int stacks) {
+
     Sphere sphere(r, sectors, stacks);
     sphere.Draw();
 }
@@ -142,7 +150,7 @@ int main() {
     glfwPollEvents();
     glfwSetCursorPos(window, 1024 / 2, 768 / 2);
 
-    glClearColor(0.0f, 0.0f, 0.3f, 0.0f);
+    glClearColor(0.0f, 0.0f, 0.1f, 0.0f);
 
     GLuint VertexArrayID;
     glGenVertexArrays(1, &VertexArrayID);
@@ -168,6 +176,9 @@ int main() {
     GLuint neptuneTextureID = loadTexture("texturas/neptune.jpg");
     GLuint saturnTextureID = loadTexture("texturas/saturn.jpg");
     GLuint saturnRingTextureID = loadTexture("texturas/saturn_ring.png");
+    GLuint celestialSkyID = loadTexture("texturas/sky2.png");
+
+
 
     double angle[9] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     float pos_earth = 50.0;
@@ -272,7 +283,6 @@ int main() {
         viewPos = getCameraPosition();
 
         setShaderUniforms(programID, lightcolor, lightpos, viewPos, 1.f, 0.1f, 0.4f * 128.0f, Projection, View, sunModelMatrix);
-
 
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
         setTexture(sunTextureID, programID);
@@ -412,6 +422,24 @@ int main() {
 
 
         // Render Saturn Ring
+
+
+        //render sky
+
+        glm::mat4 skyModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+        neptuneModelMatrix = glm::rotate(skyModelMatrix, velocidade, glm::vec3(0.0f, 1.0f, 0.0f));
+        Projection = getProjectionMatrix();
+        View = getViewMatrix();
+        MVP = Projection * View * skyModelMatrix;
+        viewPos = getCameraPosition();
+
+        
+
+        setShaderUniforms(programID, lightcolor, glm::vec3(), viewPos, 1.0f, 0.f, 0.0f, Projection, View, skyModelMatrix);
+
+        glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
+        setTexture(celestialSkyID, programID);
+        renderSphere(1000.0f, 36, 18);
 
 
 
