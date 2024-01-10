@@ -1,5 +1,4 @@
 #define STB_IMAGE_IMPLEMENTATION
-#include <common/stb_image.h>
 #include <iostream>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -8,9 +7,12 @@
 #include "include/shader.hpp"
 #include "include/texture.hpp"
 #include "include/controlsProjeto.hpp"
+#include "include/stb_image.h"
 #include "Sphere.h"
 #include <map>
 #include <glm/gtc/type_ptr.hpp>
+#include "include/ft2build.h"
+#include FT_FREETYPE_H
 
 
 
@@ -153,7 +155,7 @@ void setShaderUniforms(GLuint programID, const glm::vec3& lightColor, const glm:
 
 void RenderText(GLuint programID2, std::string text, GLfloat x, GLfloat y, GLfloat scale, glm::vec3 color)
 {   
-    std::cout << text << std::endl;
+    //std::cout << text << std::endl;
     // Activate corresponding render state
     glUseProgram(programID2);
     glUniform3f(glGetUniformLocation(programID2, "textColor"), color.x, color.y, color.z);
@@ -183,6 +185,7 @@ void RenderText(GLuint programID2, std::string text, GLfloat x, GLfloat y, GLflo
         };
         // Render glyph texture over quad
         glBindTexture(GL_TEXTURE_2D, ch.TextureID);
+
         // Update content of VBO memory
         glBindBuffer(GL_ARRAY_BUFFER, textVBO);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
@@ -198,10 +201,10 @@ void RenderText(GLuint programID2, std::string text, GLfloat x, GLfloat y, GLflo
 
 void ShowInfo(GLuint programID2)
 {
-    RenderText(programID2, "Planeta: " + Info.Name, 25.0f, SCREEN_HEIGHT - 30.0f, 0.35f, glm::vec3(0.7f, 0.7f, 0.11f));
-    RenderText(programID2, "Velocidade Orbital Media (km/s): " + Info.OrbitSpeed, 25.0f, SCREEN_HEIGHT - 50.0f, 0.35f, glm::vec3(0.7f, 0.7f, 0.11f));
-    RenderText(programID2, "Massa (kg * 10^24): " + Info.Mass, 25.0f, SCREEN_HEIGHT - 70.0f, 0.35f, glm::vec3(0.7f, 0.7f, 0.11f));
-    RenderText(programID2, "Gravidade (g): " + Info.Gravity, 25.0f, SCREEN_HEIGHT - 90.0f, 0.35f, glm::vec3(0.7f, 0.7f, 0.11f));
+    RenderText(programID2, "Planeta: " + Info.Name, 25.0f, SCREEN_HEIGHT - 30.0f, 0.35f, glm::vec3(1.0f, 1.0f, 1.0f));
+    RenderText(programID2, "Velocidade Orbital Media (km/s): " + Info.OrbitSpeed, 25.0f, SCREEN_HEIGHT - 50.0f, 0.35f, glm::vec3(1.0f, 1.0f, 1.0f));
+    RenderText(programID2, "Massa (kg * 10^24): " + Info.Mass, 25.0f, SCREEN_HEIGHT - 70.0f, 0.35f, glm::vec3(1.0f, 1.0f, 1.0f));
+    RenderText(programID2, "Gravidade (g): " + Info.Gravity, 25.0f, SCREEN_HEIGHT - 90.0f, 0.35f, glm::vec3(1.0f, 1.0f, 1.0f));
 }
 
 
@@ -213,6 +216,71 @@ int main() {
 
     glfwPollEvents();
     glfwSetCursorPos(window, 1024 / 2, 768 / 2);
+
+
+
+    /* CONFIGURATION FOR TEXT RENDER */
+    FT_Library ft;
+    if (FT_Init_FreeType(&ft))
+        std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
+
+    FT_Face face;
+    if (FT_New_Face(ft, "fonts/ff.otf", 0, &face))
+        std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // Set size to load glyphs as
+    FT_Set_Pixel_Sizes(face, 0, 42);
+
+    // Disable byte-alignment restriction
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    // Load first 128 characters of ASCII set
+    for (GLubyte c = 0; c < 128; c++)
+    {
+        // Load character glyph 
+        if (FT_Load_Char(face, c, FT_LOAD_RENDER))
+        {
+            std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
+            continue;
+        }
+        // Generate texture
+        GLuint texture;
+        glGenTextures(1, &texture);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RED,
+            face->glyph->bitmap.width,
+            face->glyph->bitmap.rows,
+            0,
+            GL_RED,
+            GL_UNSIGNED_BYTE,
+            face->glyph->bitmap.buffer
+        );
+        // Set texture options
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        // Now store character for later use
+        Character character = {
+            texture,
+            glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
+            glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
+            face->glyph->advance.x
+        };
+        Characters.insert(std::pair<GLchar, Character>(c, character));
+    }
+    glBindTexture(GL_TEXTURE_2D, 0);
+    // Destroy FreeType once we're finished
+    FT_Done_Face(face);
+    FT_Done_FreeType(ft);
+    /* CONFIGURATION FOR TEXT RENDER */
+
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
@@ -230,6 +298,7 @@ int main() {
     GLuint programID2 = LoadShaders("shaders/TextShader.vertexshader", "shaders/TextShader.fragmentshader");
     // PROJECTION FOR TEXT RENDER
     glm::mat4 Text_projection = glm::ortho(0.0f, SCREEN_WIDTH, 0.0f, SCREEN_HEIGHT);
+    glUseProgram(programID2);
     glUniformMatrix4fv(glGetUniformLocation(programID2, "projection"), 1, GL_FALSE, glm::value_ptr(Text_projection));
 
     /* TEXT RENDERING VAO-VBO*/
@@ -243,6 +312,7 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
     /* TEXT RENDERING VAO-VBO*/
+    glUseProgram(0);
 
 
     // Load textures for Earth, Mars, Sun, Moon, and Venus
@@ -256,7 +326,6 @@ int main() {
     GLuint mercuryTextureID = loadTexture("texturas/mercury.jpg");
     GLuint neptuneTextureID = loadTexture("texturas/neptune.jpg");
     GLuint saturnTextureID = loadTexture("texturas/saturn.jpg");
-    GLuint saturnRingTextureID = loadTexture("texturas/saturn_ring.png");
     GLuint celestialSkyID = loadTexture("texturas/sky2.png");
 
     double angle[9] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 , 0.0 };
@@ -269,7 +338,7 @@ int main() {
     bool rodar = true;
     float velocidade[9] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 , 0.0 };
     float x[9] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 , 0.0 };
-    float y[9] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 , 0.0 };
+    float z[9] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 , 0.0 };
     float escala = 0.00005;
 
     glm::vec3 lightpos(0.0f, 0.0f, 0.0f);
@@ -286,14 +355,15 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         computeMatricesFromInputs(position);
-        glm::vec3 DirecaoCamera = getCameraDirection();
+
         double radius = orbitRadius(3.14159 * 2 * angle[2] / 360, 0.017, 1);
+
         if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS or rodar == true) {
 
             //Translação Terra
             angle[2] += angular_speed(365.25);
             x[2] = radius * sin(3.14159 * 2 * angle[2] / 360);
-            y[2] = radius * cos(3.14159 * 2 * angle[2] / 360);
+            z[2] = radius * cos(3.14159 * 2 * angle[2] / 360);
             //Rotação
             velocidade[2] += 1574 * escala;
 
@@ -302,7 +372,7 @@ int main() {
             angle[3] += angular_speed(687);
             radius = orbitRadius(3.14159 * 2 * angle[3] / 360, 0.093, 1.524);
             x[3] = radius * sin(3.14159 * 2 * angle[3] / 360);
-            y[3] = radius * cos(3.14159 * 2 * angle[3] / 360);
+            z[3] = radius * cos(3.14159 * 2 * angle[3] / 360);
             //Rotação
             velocidade[3] += 866 * escala;
 
@@ -310,7 +380,7 @@ int main() {
             angle[1] += angular_speed(224.70);
             radius = orbitRadius(3.14159 * 2 * angle[1] / 360, 0.007, 0.723);
             x[1] = radius * sin(3.14159 * 2 * angle[1] / 360);
-            y[1] = radius * cos(3.14159 * 2 * angle[1] / 360);
+            z[1] = radius * cos(3.14159 * 2 * angle[1] / 360);
             //Rotação
             velocidade[1] += 1.52 * escala;
 
@@ -319,7 +389,7 @@ int main() {
             angle[4] += angular_speed(4328.9);
             radius = orbitRadius(3.14159 * 2 * angle[4] / 360, 0.007, 5.204);
             x[4] = radius * sin(3.14159 * 2 * angle[4] / 360);
-            y[4] = radius * cos(3.14159 * 2 * angle[4] / 360);
+            z[4] = radius * cos(3.14159 * 2 * angle[4] / 360);
             //Rotação
             velocidade[4] += 45583 * escala;
 
@@ -330,7 +400,7 @@ int main() {
             radius = orbitRadius(3.14159 * 2 * angle[6] / 360, 0.046, 19.22);
 
             x[6] = radius * sin(3.14159 * 2 * angle[6] / 360);
-            y[6] = radius * cos(3.14159 * 2 * angle[6] / 360);
+            z[6] = radius * cos(3.14159 * 2 * angle[6] / 360);
             //Rotação
             velocidade[6] += 14794 * escala;
 
@@ -341,7 +411,7 @@ int main() {
             radius = orbitRadius(3.14159 * 2 * angle[0] / 360, 0.206, 0.387);
 
             x[0] = radius * sin(3.14159 * 2 * angle[0] / 360);
-            y[0] = radius * cos(3.14159 * 2 * angle[0] / 360);
+            z[0] = radius * cos(3.14159 * 2 * angle[0] / 360);
             //Rotação
             velocidade[0] += 10.83 * escala;
 
@@ -352,7 +422,7 @@ int main() {
             radius = orbitRadius(3.14159 * 2 * angle[7] / 360, 0.01, 30.05);
 
             x[7] = radius * sin(3.14159 * 2 * angle[7] / 360);
-            y[7] = radius * cos(3.14159 * 2 * angle[7] / 360);
+            z[7] = radius * cos(3.14159 * 2 * angle[7] / 360);
             //Rotação
             velocidade[7] += 9719 * escala;
 
@@ -363,7 +433,7 @@ int main() {
             radius = orbitRadius(3.14159 * 2 * angle[5] / 360, 0.056, 9.582);
 
             x[5] = radius * sin(3.14159 * 2 * angle[5] / 360);
-            y[5] = radius * cos(3.14159 * 2 * angle[5] / 360);
+            z[5] = radius * cos(3.14159 * 2 * angle[5] / 360);
             //Rotação
             velocidade[5] += 36840 * escala;
 
@@ -375,7 +445,7 @@ int main() {
             angle[8] += angular_speed(27.32);
             radius = orbitRadius(3.14159 * 2 * angle[8] / 360, 0.055, 0.1);
             x[8] = radius * sin(3.14159 * 2 * angle[8] / 360);
-            y[8] = radius * cos(3.14159 * 2 * angle[8] / 360);
+            z[8] = radius * cos(3.14159 * 2 * angle[8] / 360);
 
             rodar = true;
         }
@@ -386,7 +456,7 @@ int main() {
 
         glUseProgram(programID);
         // Render Earth
-        glm::mat4 earthModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x[2], 0.0f, y[2]));
+        glm::mat4 earthModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x[2], 0.0f, z[2]));
         earthModelMatrix = glm::rotate(earthModelMatrix, velocidade[2], glm::vec3(0.0f, 1.0f, 0.0f));
 
         Projection = getProjectionMatrix();
@@ -403,7 +473,7 @@ int main() {
 
 
         // Render Moon
-        glm::mat4 moonModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x[2] + x[8], 0.0f, y[2] + y[8]));
+        glm::mat4 moonModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x[2] + x[8], 0.0f, z[2] + z[8]));
         moonModelMatrix = glm::rotate(moonModelMatrix, velocidade[2], glm::vec3(0.0f, 1.0f, 0.0f));
 
         Projection = getProjectionMatrix();
@@ -420,7 +490,7 @@ int main() {
 
 
         // Render Mars
-        glm::mat4 marsModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x[3], 0.0f, y[3]));
+        glm::mat4 marsModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x[3], 0.0f, z[3]));
         marsModelMatrix = glm::rotate(marsModelMatrix, velocidade[3], glm::vec3(0.0f, 1.0f, 0.0f));
         
         Projection = getProjectionMatrix();
@@ -455,7 +525,7 @@ int main() {
 
 
         // Render Venus
-        glm::mat4 venusModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x[1], 0.0f, y[1]));
+        glm::mat4 venusModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x[1], 0.0f, z[1]));
         venusModelMatrix = glm::rotate(venusModelMatrix, velocidade[1], glm::vec3(0.0f, 1.0f, 0.0f));
        
         Projection = getProjectionMatrix();
@@ -472,7 +542,7 @@ int main() {
 
 
         // Render Jupiter
-        glm::mat4 jupiterModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x[4], 0.0f, y[4]));
+        glm::mat4 jupiterModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x[4], 0.0f, z[4]));
         jupiterModelMatrix = glm::rotate(jupiterModelMatrix, velocidade[4], glm::vec3(0.0f, 1.0f, 0.0f));
         
         Projection = getProjectionMatrix();
@@ -489,7 +559,7 @@ int main() {
 
 
         // Render Uranus
-        glm::mat4 uranusModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x[6], 0.0f, y[6]));
+        glm::mat4 uranusModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x[6], 0.0f, z[6]));
         uranusModelMatrix = glm::rotate(uranusModelMatrix, velocidade[6], glm::vec3(0.0f, 1.0f, 0.0f));
         
         Projection = getProjectionMatrix();
@@ -507,7 +577,7 @@ int main() {
 
 
         // Render Mercury
-        glm::mat4 mercuryModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x[0], 0.0f, y[0]));
+        glm::mat4 mercuryModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x[0], 0.0f, z[0]));
         mercuryModelMatrix = glm::rotate(mercuryModelMatrix, velocidade[0], glm::vec3(0.0f, 1.0f, 0.0f));
         
         Projection = getProjectionMatrix();
@@ -524,7 +594,7 @@ int main() {
 
 
         // Render Neptune
-        glm::mat4 neptuneModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x[7], 0.0f, y[7]));
+        glm::mat4 neptuneModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x[7], 0.0f, z[7]));
         neptuneModelMatrix = glm::rotate(neptuneModelMatrix, velocidade[7], glm::vec3(0.0f, 1.0f, 0.0f));
         
         Projection = getProjectionMatrix();
@@ -542,7 +612,7 @@ int main() {
 
 
         // Render Saturn
-        glm::mat4 saturnModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x[5], 0.0f, y[5]));
+        glm::mat4 saturnModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(x[5], 0.0f, z[5]));
         saturnModelMatrix = glm::rotate(saturnModelMatrix, velocidade[5], glm::vec3(0.0f, 1.0f, 0.0f));
         
         Projection = getProjectionMatrix();
@@ -557,10 +627,6 @@ int main() {
         renderSphere(3.7f, 36, 18);
 
 
-        // Render Saturn Ring
-
-
-
 
         //render sky
         glm::mat4 skyModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
@@ -570,7 +636,6 @@ int main() {
         viewPos = getCameraPosition();
 
         setShaderUniforms(programID, lightcolor, glm::vec3(), viewPos, 1.0f, 0.f, 0.0f, Projection, View, skyModelMatrix);
-        neptuneModelMatrix = glm::rotate(skyModelMatrix, velocidade[7], glm::vec3(0.0f, 1.0f, 0.0f));
         glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
         setTexture(celestialSkyID, programID);
         renderSphere(2000.0f, 36, 18);
@@ -579,7 +644,7 @@ int main() {
 
 
         if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS or planetaSelecionado == 1) {
-            position = glm::vec3(x[0]+4.4, 0, y[0]+4.4);
+            position = glm::vec3(x[0], 1, z[0]+4.4);
             planetaSelecionado = 1;
             Info.Name = "Mercurio";
             Info.OrbitSpeed = "47,87";
@@ -590,7 +655,7 @@ int main() {
 
 
         }if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS or planetaSelecionado == 2) {
-            position = glm::vec3(x[1] + 6.4, 0, y[1] + 6.4);
+            position = glm::vec3(x[1], 1.5, z[1] + 6.4);
             planetaSelecionado = 2;
 
             Info.Name = "Venus";
@@ -601,7 +666,7 @@ int main() {
             ShowInfo(programID2);
 
         }if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS or planetaSelecionado == 3) {
-            position = glm::vec3(x[2] + 6.4, 0, y[2] + 6.4);
+            position = glm::vec3(x[2], 1.6, z[2] + 6.4);
             planetaSelecionado = 3;
 
             Info.Name = "Terra";
@@ -613,7 +678,7 @@ int main() {
 
             }
         if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS or planetaSelecionado == 4) {
-            position = glm::vec3(x[3] + 6.4, 0, y[3] + 6.4);
+            position = glm::vec3(x[3], 2, z[3] + 6.4);
             planetaSelecionado = 4;
 
             Info.Name = "Marte";
@@ -625,7 +690,7 @@ int main() {
 
             }
         if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS or planetaSelecionado == 5) {
-            position = glm::vec3(x[4] + 15.4, 0, y[4] + 20.4);
+            position = glm::vec3(x[4], 5.6, z[4] + 20.4);
             planetaSelecionado = 5;
 
             Info.Name = "Jupiter";
@@ -637,7 +702,7 @@ int main() {
 
         }if (glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS or planetaSelecionado == 6) {
 
-            position = glm::vec3(x[5] + 20.4, 0, y[5] + 20.4);
+            position = glm::vec3(x[5], 5.3, z[5] + 20.4);
             planetaSelecionado = 6;
 
             Info.Name = "Saturno";
@@ -650,7 +715,7 @@ int main() {
         }
         if (glfwGetKey(window, GLFW_KEY_7) == GLFW_PRESS or planetaSelecionado == 7) {
 
-            position = glm::vec3(x[6] + 15.4, 0, y[6] + 15.4);
+            position = glm::vec3(x[6], 4.3, z[6] + 15.4);
             planetaSelecionado = 7;
 
             Info.Name = "Urano";
@@ -662,7 +727,7 @@ int main() {
 
         }
         if (glfwGetKey(window, GLFW_KEY_8) == GLFW_PRESS or planetaSelecionado == 8) {
-            position = glm::vec3(x[7] + 4.4, 0, y[7] + 4.4);
+            position = glm::vec3(x[7], 1.3, z[7] + 4.4);
             planetaSelecionado = 8;
 
             Info.Name = "Neptuno";
